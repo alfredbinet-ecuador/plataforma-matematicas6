@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Plataforma Digital Escuela Alfred Binet</title>
+<style>
+body {
+  font-family: Arial;
+  background: #0b3d91;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.login-box {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  text-align: center;
+  width: 300px;
+}
+
+input {
+  width: 90%;
+  padding: 10px;
+  margin: 10px 0;
+}
+
+button {
+  padding: 10px;
+  width: 100%;
+  background: #0b3d91;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="login-box">
+<h2>Matemáticas 6</h2>
+<h3>Escuela Alfred Binet</h3>
+
+<input type="text" id="usuario" placeholder="Usuario">
+<input type="password" id="password" placeholder="Contraseña">
+
+<button onclick="login()">Ingresar</button>
+
+<p id="mensaje"></p>
+</div>
+
+<script>
+async function login() {
+  const usuario = document.getElementById("usuario").value;
+  const password = document.getElementById("password").value;
+
+  const response = await fetch("/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ usuario, password })
+  });
+
+  const data = await response.json();
+
+  if (data.success) {
+    alert("Bienvenido " + data.nombre);
+  } else {
+    document.getElementById("mensaje").innerText = "Usuario o contraseña incorrectos";
+  }
+}
+</script>
+
+</body>
+</html>
