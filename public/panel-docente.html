@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Panel Docente - Matemáticas 6</title>
+<style>
+body {
+  font-family: Arial;
+  background: #f4f6f9;
+  margin: 0;
+}
+
+header {
+  background: #0b3d91;
+  color: white;
+  padding: 15px;
+  text-align: center;
+}
+
+.container {
+  padding: 20px;
+}
+
+.card {
+  background: white;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+button {
+  padding: 10px;
+  background: #0b3d91;
+  color: white;
+  border: none;
+  cursor: pointer;
+  margin-top: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h2>Panel Docente</h2>
+  <p>Plataforma Matemáticas 6 - Escuela Alfred Binet</p>
+</header>
+
+<div class="container">
+
+  <div class="card">
+    <h3>📊 Estudiantes registrados</h3>
+    <div id="lista-estudiantes">
+      Cargando estudiantes...
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>📝 Crear nuevo estudiante</h3>
+    <input type="text" id="nombre" placeholder="Nombre completo"><br>
+    <input type="text" id="usuario" placeholder="Usuario"><br>
+    <input type="password" id="password" placeholder="Contraseña"><br>
+    <button onclick="crearEstudiante()">Crear estudiante</button>
+    <p id="mensaje"></p>
+  </div>
+
+</div>
+
+<script>
+
+async function cargarEstudiantes() {
+  const res = await fetch("/estudiantes");
+  const data = await res.json();
+
+  let html = "<ul>";
+  data.forEach(est => {
+    html += "<li>" + est.nombre + " (" + est.usuario + ")</li>";
+  });
+  html += "</ul>";
+
+  document.getElementById("lista-estudiantes").innerHTML = html;
+}
+
+async function crearEstudiante() {
+  const nombre = document.getElementById("nombre").value;
+  const usuario = document.getElementById("usuario").value;
+  const password = document.getElementById("password").value;
+
+  const res = await fetch("/crear-estudiante", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nombre, usuario, password })
+  });
+
+  const data = await res.json();
+  document.getElementById("mensaje").innerText = data.mensaje;
+
+  cargarEstudiantes();
+}
+
+cargarEstudiantes();
+
+</script>
+
+</body>
+</html>
