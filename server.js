@@ -76,3 +76,32 @@ app.post("/crear-estudiante", async (req, res) => {
     }
   );
 });
+app.get("/estudiantes", (req, res) => {
+  db.all(
+    "SELECT nombre, usuario FROM usuarios WHERE rol = 'estudiante'",
+    [],
+    (err, rows) => {
+      if (err) return res.json([]);
+      res.json(rows);
+    }
+  );
+});app.post("/crear-estudiante", async (req, res) => {
+  const { nombre, usuario, password } = req.body;
+
+  if (!nombre || !usuario || !password) {
+    return res.json({ success: false, mensaje: "Faltan datos" });
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  db.run(
+    "INSERT INTO usuarios (nombre, usuario, password, rol) VALUES (?, ?, ?, ?)",
+    [nombre, usuario, hashedPassword, "estudiante"],
+    function (err) {
+      if (err) {
+        return res.json({ success: false, mensaje: "Usuario ya existe" });
+      }
+      res.json({ success: true, mensaje: "Estudiante creado correctamente" });
+    }
+  );
+});
