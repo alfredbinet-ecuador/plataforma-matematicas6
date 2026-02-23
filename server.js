@@ -55,3 +55,24 @@ app.post("/login", (req, res) => {
 app.listen(3000, () => {
   console.log("Servidor corriendo en http://localhost:3000");
 });
+// Crear estudiante
+app.post("/crear-estudiante", async (req, res) => {
+  const { nombre, usuario, password } = req.body;
+
+  if (!nombre || !usuario || !password) {
+    return res.json({ success: false, message: "Faltan datos" });
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  db.run(
+    "INSERT INTO usuarios (nombre, usuario, password, rol) VALUES (?, ?, ?, ?)",
+    [nombre, usuario, hashedPassword, "estudiante"],
+    function (err) {
+      if (err) {
+        return res.json({ success: false, message: "Usuario ya existe" });
+      }
+      res.json({ success: true });
+    }
+  );
+});
