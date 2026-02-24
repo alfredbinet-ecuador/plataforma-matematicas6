@@ -34,7 +34,6 @@ button {
   border: none;
   cursor: pointer;
 }
-
 </style>
 </head>
 
@@ -53,19 +52,6 @@ button {
 </div>
 
 <script>
-async function login() {
-  const usuario = document.getElementById("usuario").value;
-  const password = document.getElementById("password").value;
-
-  const response = await fetch("/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ usuario, password })
-  });
-
-  const data = await response.json();
-
-  <script>
 async function login() {
   try {
     const usuario = document.getElementById("usuario").value;
@@ -90,7 +76,10 @@ async function login() {
         "Usuario o contraseña incorrectos";
     }
   } catch (error) {
-    console.error("Error en login:", error);
+    console.error("Error:", error);
   }
 }
 </script>
+
+</body>
+</html>
