@@ -68,40 +68,6 @@ input {
 
 <script>
 
-async function cargarEstudiantes() {
-  const res = await fetch("/estudiantes");
-  const data = await res.json();
-
-  let html = "<ul>";
-  data.forEach(est => {
-    html += "<li>" + est.nombre + " (" + est.usuario + ")</li>";
-  });
-  html += "</ul>";
-
-  document.getElementById("lista-estudiantes").innerHTML = html;
-}
-
-async function crearEstudiante() {
-  const nombre = document.getElementById("nombre").value;
-  const usuario = document.getElementById("usuario").value;
-  const password = document.getElementById("password").value;
-
-  const res = await fetch("/crear-estudiante", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ nombre, usuario, password })
-  });
-
-  const data = await res.json();
-  document.getElementById("mensaje").innerText = data.mensaje;
-
-  cargarEstudiantes();
-}
-
-cargarEstudiantes();
-
-</script>
-
 </body>
 </html>
 <div class="card">
@@ -133,4 +99,53 @@ async function cargarResultados() {
 
   document.getElementById("lista-resultados").innerHTML = html;
 }
+<script>
+
+async function cargarEstudiantes() {
+  const res = await fetch("/estudiantes");
+  const data = await res.json();
+
+  let html = "<ul>";
+  data.forEach(est => {
+    html += "<li>" + est.nombre + " (" + est.usuario + ")</li>";
+  });
+  html += "</ul>";
+
+  document.getElementById("lista-estudiantes").innerHTML = html;
+}
+
+async function crearEstudiante() {
+  const nombre = document.getElementById("nombre").value;
+  const usuario = document.getElementById("usuario").value;
+  const password = document.getElementById("password").value;
+
+  const res = await fetch("/crear-estudiante", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nombre, usuario, password })
+  });
+
+  const data = await res.json();
+  document.getElementById("mensaje").innerText = data.mensaje;
+
+  cargarEstudiantes();
+  cargarResultados();
+}
+
+async function cargarResultados() {
+  const res = await fetch("/resultados");
+  const data = await res.json();
+
+  let html = "<ul>";
+  data.forEach(r => {
+    html += "<li>" + r.nombre + " - " + r.unidad + " - Nota: " + r.nota + "</li>";
+  });
+  html += "</ul>";
+
+  document.getElementById("lista-resultados").innerHTML = html;
+}
+
+cargarEstudiantes();
 cargarResultados();
+
+</script>
