@@ -1,51 +1,48 @@
 const express = require("express");
-const sqlite3 = require("sqlite3").verbose();
 const bcrypt = require("bcrypt");
 const bodyParser = require("body-parser");
 const path = require("path");
+const { Pool } = require("pg");
 
 const app = express();
 app.use(bodyParser.json());
 app.use(express.static("public"));
 
-const db = new sqlite3.Database("./database.db");
-
-// Crear tablas
-db.serialize(() => {
-  db.run(`CREATE TABLE IF NOT EXISTS usuarios (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nombre TEXT,
-    usuario TEXT UNIQUE,
-    password TEXT,
-    rol TEXT
-  )`);
-// Guardar resultado
-app.post("/guardar-resultado", (req, res) => {
-  const { usuario_id, unidad, nota } = req.body;
-
-  db.run(
-    "INSERT INTO resultados (usuario_id, unidad, nota) VALUES (?, ?, ?)",
-    [usuario_id, unidad, nota],
-    function (err) {
-      if (err) {
-        return res.json({ success: false });
-      }
-      res.json({ success: true });
-    }
-  );
-});
-  db.run(`CREATE TABLE IF NOT EXISTS resultados (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    usuario_id INTEGER,
-    unidad TEXT,
-    nota REAL
-  )`);
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
 });
 
-// Crear docente si no existe
-const passwordDocente = bcrypt.hashSync("admin123", 10);
-db.run(`INSERT OR IGNORE INTO usuarios (id, nombre, usuario, password, rol)
-        VALUES (1, 'Wladimir', 'wladimir', '${passwordDocente}', 'docente')`);
+// Crear tablas si no existen
+(async () => {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS usuarios (
+      id SERIAL PRIMARY KEY,
+      nombre TEXT,
+      usuario TEXT UNIQUE,
+      password TEXT,
+      rol TEXT
+    );
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS resultados (
+      id SERIAL PRIMARY KEY,
+      usuario_id INTEGER REFERENCES usuarios(id),
+      unidad TEXT,
+      nota REAL
+    );
+  `);
+
+  // Crear docente si no existe
+  const passwordDocente = bcrypt.hashSync("admin123", 10);
+  await pool.query(`
+    INSERT INTO usuarios (nombre, usuario, password, rol)
+    VALUES ('Wladimir', 'wladimir', $1, 'docente')
+    ON CONFLICT (usuario) DO NOTHING;
+  `, [passwordDocente]);
+
+})();
 
 // Ruta principal
 app.get("/", (req, res) => {
@@ -53,80 +50,79 @@ app.get("/", (req, res) => {
 });
 
 // Login
-app.post("/login", (req, res) => {
+app.post("/login", async (req, res) => {
   const { usuario, password } = req.body;
 
-  db.get("SELECT * FROM usuarios WHERE usuario = ?", [usuario], async (err, row) => {
-    if (!row) return res.json({ success: false });
+  const result = await pool.query(
+    "SELECT * FROM usuarios WHERE usuario = $1",
+    [usuario]
+  );
 
-    const valido = await bcrypt.compare(password, row.password);
-    if (!valido) return res.json({ success: false });
+  if (result.rows.length === 0) {
+    return res.json({ success: false });
+  }
 
-    res.json({ success: true, rol: row.rol, nombre: row.nombre });
-  });
+  const user = result.rows[0];
+  const valido = await bcrypt.compare(password, user.password);
+
+  if (!valido) {
+    return res.json({ success: false });
+  }
+
+  res.json({ success: true, rol: user.rol, nombre: user.nombre });
 });
 
-app.listen(3000, () => {
-  console.log("Servidor corriendo en http://localhost:3000");
+// Obtener estudiantes
+app.get("/estudiantes", async (req, res) => {
+  const result = await pool.query(
+    "SELECT nombre, usuario FROM usuarios WHERE rol = 'estudiante'"
+  );
+  res.json(result.rows);
 });
+
 // Crear estudiante
 app.post("/crear-estudiante", async (req, res) => {
   const { nombre, usuario, password } = req.body;
 
-  if (!nombre || !usuario || !password) {
-    return res.json({ success: false, message: "Faltan datos" });
-  }
-
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  db.run(
-    "INSERT INTO usuarios (nombre, usuario, password, rol) VALUES (?, ?, ?, ?)",
-    [nombre, usuario, hashedPassword, "estudiante"],
-    function (err) {
-      if (err) {
-        return res.json({ success: false, message: "Usuario ya existe" });
-      }
-      res.json({ success: true });
-    }
-  );
-});
-app.get("/estudiantes", (req, res) => {
-  db.all(
-    "SELECT nombre, usuario FROM usuarios WHERE rol = 'estudiante'",
-    [],
-    (err, rows) => {
-      if (err) return res.json([]);
-      res.json(rows);
-    }
-  );
-});app.post("/crear-estudiante", async (req, res) => {
-  const { nombre, usuario, password } = req.body;
+  try {
+    await pool.query(
+      "INSERT INTO usuarios (nombre, usuario, password, rol) VALUES ($1, $2, $3, 'estudiante')",
+      [nombre, usuario, hashedPassword]
+    );
 
-  if (!nombre || !usuario || !password) {
-    return res.json({ success: false, mensaje: "Faltan datos" });
+    res.json({ mensaje: "Estudiante creado correctamente" });
+  } catch (error) {
+    res.json({ mensaje: "Error: usuario ya existe" });
   }
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  db.run(
-    "INSERT INTO usuarios (nombre, usuario, password, rol) VALUES (?, ?, ?, ?)",
-    [nombre, usuario, hashedPassword, "estudiante"],
-    function (err) {
-      if (err) {
-        return res.json({ success: false, mensaje: "Usuario ya existe" });
-      }
-      res.json({ success: true, mensaje: "Estudiante creado correctamente" });
-    }
-  );
 });
+
+// Guardar resultado
+app.post("/guardar-resultado", async (req, res) => {
+  const { usuario_id, unidad, nota } = req.body;
+
+  await pool.query(
+    "INSERT INTO resultados (usuario_id, unidad, nota) VALUES ($1, $2, $3)",
+    [usuario_id, unidad, nota]
+  );
+
+  res.json({ mensaje: "Resultado guardado" });
+});
+
 // Ver resultados
-app.get("/resultados", (req, res) => {
-  db.all(`
+app.get("/resultados", async (req, res) => {
+  const result = await pool.query(`
     SELECT u.nombre, r.unidad, r.nota
     FROM resultados r
     JOIN usuarios u ON r.usuario_id = u.id
-  `, [], (err, rows) => {
-    if (err) return res.json([]);
-    res.json(rows);
-  });
+  `);
+
+  res.json(result.rows);
+});
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log("Servidor corriendo...");
 });
