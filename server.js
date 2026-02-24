@@ -126,3 +126,43 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Servidor corriendo...");
 });
+let usuarioActual = null;
+
+// Guardar usuario al hacer login
+app.post("/login", async (req, res) => {
+  const { usuario, password } = req.body;
+
+  const result = await pool.query(
+    "SELECT * FROM usuarios WHERE usuario = $1",
+    [usuario]
+  );
+
+  if (result.rows.length === 0) {
+    return res.json({ success: false });
+  }
+
+  const user = result.rows[0];
+  const valido = await bcrypt.compare(password, user.password);
+
+  if (!valido) {
+    return res.json({ success: false });
+  }
+
+  usuarioActual = user; // 👈 guardamos sesión simple
+
+  res.json({ success: true, rol: user.rol, nombre: user.nombre });
+});
+
+// Ruta usuario actual
+app.get("/usuario-actual", (req, res) => {
+  res.json(usuarioActual);
+});
+
+// Mis resultados
+app.get("/mis-resultados/:id", async (req, res) => {
+  const result = await pool.query(
+    "SELECT unidad, nota FROM resultados WHERE usuario_id = $1",
+    [req.params.id]
+  );
+  res.json(result.rows);
+});

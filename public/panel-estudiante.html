@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Panel Estudiante - Matemáticas 6</title>
+<meta charset="UTF-8">
+<style>
+body {
+  font-family: Arial;
+  background: #f4f6f9;
+  margin: 0;
+}
+header {
+  background: #0b3d91;
+  color: white;
+  padding: 15px;
+  text-align: center;
+}
+.container {
+  padding: 20px;
+}
+.card {
+  background: white;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+button {
+  padding: 10px;
+  background: #0b3d91;
+  color: white;
+  border: none;
+  cursor: pointer;
+  margin-top: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h2>Panel del Estudiante</h2>
+  <p id="nombre-estudiante"></p>
+</header>
+
+<div class="container">
+
+  <div class="card">
+    <h3>📊 Mis resultados</h3>
+    <div id="mis-resultados">Cargando...</div>
+  </div>
+
+  <div class="card">
+    <h3>📝 Evaluación Fracciones</h3>
+    <p>¿Cuánto es 1/2 + 1/4?</p>
+    <input type="text" id="respuesta">
+    <button onclick="enviarEvaluacion()">Enviar</button>
+    <p id="mensaje"></p>
+  </div>
+
+</div>
+
+<script>
+
+let usuarioId = null;
+let nombreUsuario = null;
+
+// Obtener datos del usuario desde el servidor
+async function obtenerUsuario() {
+  const res = await fetch("/usuario-actual");
+  const data = await res.json();
+
+  usuarioId = data.id;
+  nombreUsuario = data.nombre;
+
+  document.getElementById("nombre-estudiante").innerText =
+    "Bienvenido " + nombreUsuario;
+
+  cargarResultados();
+}
+
+async function cargarResultados() {
+  const res = await fetch("/mis-resultados/" + usuarioId);
+  const data = await res.json();
+
+  if (data.length === 0) {
+    document.getElementById("mis-resultados").innerText =
+      "Aún no tienes resultados.";
+    return;
+  }
+
+  let html = "<ul>";
+  data.forEach(r => {
+    html += "<li>" + r.unidad + " - Nota: " + r.nota + "</li>";
+  });
+  html += "</ul>";
+
+  document.getElementById("mis-resultados").innerHTML = html;
+}
+
+async function enviarEvaluacion() {
+  const respuesta = document.getElementById("respuesta").value;
+  let nota = 0;
+
+  if (respuesta === "3/4") {
+    nota = 10;
+  }
+
+  await fetch("/guardar-resultado", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      usuario_id: usuarioId,
+      unidad: "Fracciones",
+      nota: nota
+    })
+  });
+
+  document.getElementById("mensaje").innerText =
+    "Evaluación enviada. Nota: " + nota;
+
+  cargarResultados();
+}
+
+obtenerUsuario();
+
+</script>
+
+</body>
+</html>
