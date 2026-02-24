@@ -104,3 +104,20 @@ cargarEstudiantes();
 
 </body>
 </html>
+<div class="card">
+  <h3>📊 Resultados de evaluaciones</h3>
+  <div id="lista-resultados">Cargando resultados...</div>
+</div>
+async function cargarResultados() {
+  const res = await fetch("/resultados");
+  const data = await res.json();
+
+  let html = "<ul>";
+  data.forEach(r => {
+    html += "<li>" + r.nombre + " - " + r.unidad + " - Nota: " + r.nota + "</li>";
+  });
+  html += "</ul>";
+
+  document.getElementById("lista-resultados").innerHTML = html;
+}
+cargarResultados();
