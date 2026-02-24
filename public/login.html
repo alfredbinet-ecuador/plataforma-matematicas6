@@ -65,14 +65,32 @@ async function login() {
 
   const data = await response.json();
 
-  if (data.success) {
-    if (data.rol === "docente") {
-      window.location.href = "/panel-docente.html";
+  <script>
+async function login() {
+  try {
+    const usuario = document.getElementById("usuario").value;
+    const password = document.getElementById("password").value;
+
+    const response = await fetch("/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ usuario, password })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      if (data.rol === "docente") {
+        window.location.href = "/panel-docente.html";
+      } else {
+        window.location.href = "/panel-estudiante.html";
+      }
     } else {
-      window.location.href = "/panel-estudiante.html";
+      document.getElementById("mensaje").innerText =
+        "Usuario o contraseña incorrectos";
     }
-  } else {
-    document.getElementById("mensaje").innerText = "Usuario o contraseña incorrectos";
+  } catch (error) {
+    console.error("Error en login:", error);
   }
 }
 </script>
