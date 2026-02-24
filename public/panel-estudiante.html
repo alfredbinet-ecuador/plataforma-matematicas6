@@ -66,7 +66,7 @@ let usuarioId = null;
 let nombreUsuario = null;
 
 // Obtener datos del usuario desde el servidor
-async function obtenerUsuario() {
+
   const res = await fetch("/usuario-actual");
   const data = await res.json();
 
@@ -122,7 +122,6 @@ async function enviarEvaluacion() {
   cargarResultados();
 }
 
-obtenerUsuario();
 
 </script>
 
