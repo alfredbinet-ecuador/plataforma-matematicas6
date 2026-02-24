@@ -19,7 +19,21 @@ db.serialize(() => {
     password TEXT,
     rol TEXT
   )`);
+// Guardar resultado
+app.post("/guardar-resultado", (req, res) => {
+  const { usuario_id, unidad, nota } = req.body;
 
+  db.run(
+    "INSERT INTO resultados (usuario_id, unidad, nota) VALUES (?, ?, ?)",
+    [usuario_id, unidad, nota],
+    function (err) {
+      if (err) {
+        return res.json({ success: false });
+      }
+      res.json({ success: true });
+    }
+  );
+});
   db.run(`CREATE TABLE IF NOT EXISTS resultados (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     usuario_id INTEGER,
@@ -104,4 +118,15 @@ app.get("/estudiantes", (req, res) => {
       res.json({ success: true, mensaje: "Estudiante creado correctamente" });
     }
   );
+});
+// Ver resultados
+app.get("/resultados", (req, res) => {
+  db.all(`
+    SELECT u.nombre, r.unidad, r.nota
+    FROM resultados r
+    JOIN usuarios u ON r.usuario_id = u.id
+  `, [], (err, rows) => {
+    if (err) return res.json([]);
+    res.json(rows);
+  });
 });
