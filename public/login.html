@@ -66,11 +66,13 @@ async function login() {
   const data = await response.json();
 
   if (data.success) {
-   if (data.rol === "docente") {
-       window.location.href = "/panel-docente.html";
-   } else {
-       window.location.href = "/panel-estudiante.html";
-   }
-} else {
-   document.getElementById("mensaje").innerText = "Usuario o contraseña incorrectos";
+    if (data.rol === "docente") {
+      window.location.href = "/panel-docente.html";
+    } else {
+      window.location.href = "/panel-estudiante.html";
+    }
+  } else {
+    document.getElementById("mensaje").innerText = "Usuario o contraseña incorrectos";
+  }
 }
+</script>
