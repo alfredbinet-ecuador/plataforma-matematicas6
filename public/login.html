@@ -66,11 +66,21 @@ async function login() {
     const data = await response.json();
 
     if (data.success) {
-      if (data.rol === "docente") {
-        window.location.href = "/panel-docente.html";
-      } else {
-        window.location.href = "/panel-estudiante.html";
-      }
+
+  // Guardamos sesión en el navegador
+  localStorage.setItem("usuarioId", data.id);
+  localStorage.setItem("nombreUsuario", data.nombre);
+
+  if (data.rol === "docente") {
+      window.location.href = "/panel-docente.html";
+  } else {
+      window.location.href = "/panel-estudiante.html";
+  }
+
+} else {
+  document.getElementById("mensaje").innerText =
+    "Usuario o contraseña incorrectos";
+}
     } else {
       document.getElementById("mensaje").innerText =
         "Usuario o contraseña incorrectos";
@@ -83,3 +93,9 @@ async function login() {
 
 </body>
 </html>
+res.json({
+  success: true,
+  rol: user.rol,
+  nombre: user.nombre,
+  id: user.id
+});
