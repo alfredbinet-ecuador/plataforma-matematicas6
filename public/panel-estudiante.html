@@ -62,16 +62,13 @@ button {
 
 <script>
 
-let usuarioId = null;
-let nombreUsuario = null;
+let usuarioId = localStorage.getItem("usuarioId");
+let nombreUsuario = localStorage.getItem("nombreUsuario");
 
-// Obtener datos del usuario desde el servidor
-
-  const res = await fetch("/usuario-actual");
-  const data = await res.json();
-
-  usuarioId = data.id;
-  nombreUsuario = data.nombre;
+if (!usuarioId) {
+  document.getElementById("mis-resultados").innerText =
+    "No hay sesión activa.";
+} else {
 
   document.getElementById("nombre-estudiante").innerText =
     "Bienvenido " + nombreUsuario;
@@ -122,8 +119,4 @@ async function enviarEvaluacion() {
   cargarResultados();
 }
 
-
 </script>
-
-</body>
-</html>
